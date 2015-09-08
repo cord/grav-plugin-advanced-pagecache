@@ -35,21 +35,22 @@ class AdvancedPageCachePlugin extends Plugin
         $query = $uri->query(null, true);
 
         $this->path = $this->grav['uri']->path();
-
         // do not run in these scenarios
         if ($this->isAdmin() ||
             !$config['enabled_with_params'] && !empty($params) ||
             !$config['enabled_with_query'] && !empty($query) ||
             $config['whitelist'] && is_array($config['whitelist']) && !in_array($this->path, $config['whitelist']) ||
-            $config['blacklist'] && is_array($config['blacklist']) && in_array($this->path, $config['blacklist'])) {
+            $config['blacklist'] && is_array($config['blacklist']) && in_array($this->path, $config['blacklist'])
+        ) {
             return;
         }
 
+        $this->grav['pagecache'] = $this->grav['cache']->fetch($this->path);
 
-
-        $pagecache = $this->grav['cache']->fetch($this->path);
-        if ($pagecache) {
-            echo $pagecache;
+        if ($this->grav['pagecache']) {
+            $this->grav->fireEvent('onPageCacheRender');
+            echo $this->grav['pagecache'];
+            // echo "<!-- cached -->";
             exit;
         }
     }
@@ -58,5 +59,6 @@ class AdvancedPageCachePlugin extends Plugin
     public function onOutputGenerated()
     {
         $this->grav['cache']->save($this->path, $this->grav->output);
+        // $this->grav->output .= "<!-- not cached -->";
     }
 }
